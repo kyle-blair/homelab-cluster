@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-cert
+  namespace: argocd
+spec:
+  commonName: argocd.home.arpa
+  dnsNames:
+  - argocd.home.arpa
+  duration: 8760h
+  issuerRef:
+    kind: ClusterIssuer
+    name: internal-ca-issuer
+  renewBefore: 720h
+  secretName: argocd-tls
