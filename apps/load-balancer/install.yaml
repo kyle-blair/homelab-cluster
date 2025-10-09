@@ -1907,6 +1907,7 @@ spec:
   template:
     metadata:
       annotations:
+        container.apparmor.security.beta.kubernetes.io/speaker: unconfined
         prometheus.io/port: "7472"
         prometheus.io/scrape: "true"
       labels:
@@ -1971,6 +1972,7 @@ spec:
           capabilities:
             add:
             - NET_RAW
+            - NET_ADMIN
             drop:
             - ALL
           readOnlyRootFilesystem: true
