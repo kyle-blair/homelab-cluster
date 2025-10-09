@@ -1,21 +1,20 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: metallb
+  name: load-balancer
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/kyle-blair/homelab-cluster.git
     targetRevision: main
-    path: apps/metallb
+    path: apps/load-balancer
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system
   syncPolicy:
     automated:
-      prune: false # I want to rename some components
+      prune: true
       selfHeal: true
     syncOptions:
-      - ServerSideApply=true
       - CreateNamespace=true
