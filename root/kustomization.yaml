@@ -5,4 +5,4 @@ resources:
   - apps/argocd-config.yaml
   - apps/cert-manager.yaml
   - apps/local-path-storage.yaml
-  - apps/metallb.yaml
+  - apps/load-balancer.yaml

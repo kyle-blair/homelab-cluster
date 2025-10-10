@@ -3,12 +3,14 @@ kind: Application
 metadata:
   name: argocd
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   project: default
   source:
     repoURL: https://github.com/argoproj/argo-cd.git
-    targetRevision: stable                # or a specific tag, e.g., v2.12.3
-    path: manifests/cluster-install       # or use the Helm chart instead
+    targetRevision: v2.12.3
+    path: manifests/cluster-install
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
