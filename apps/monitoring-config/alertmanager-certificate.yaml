@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: alertmanager-cert
+spec:
+  commonName: alertmanager.home.arpa
+  dnsNames:
+  - alertmanager.home.arpa
+  duration: 8760h
+  issuerRef:
+    kind: ClusterIssuer
+    name: internal-ca-issuer
+  renewBefore: 720h
+  secretName: alertmanager-tls

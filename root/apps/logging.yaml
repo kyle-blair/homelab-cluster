@@ -18,6 +18,10 @@ spec:
           enabled: true
         loki:
           isDefault: true
+          persistence:
+            enabled: true
+            size: 20Gi
+            storageClassName: local-path
   destination:
     server: https://kubernetes.default.svc
     namespace: logging

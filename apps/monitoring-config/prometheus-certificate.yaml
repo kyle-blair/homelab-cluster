@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prometheus-cert
+spec:
+  commonName: prometheus.home.arpa
+  dnsNames:
+  - prometheus.home.arpa
+  duration: 8760h
+  issuerRef:
+    kind: ClusterIssuer
+    name: internal-ca-issuer
+  renewBefore: 720h
+  secretName: prometheus-tls

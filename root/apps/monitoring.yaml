@@ -11,6 +11,13 @@ spec:
     targetRevision: 58.3.2
     helm:
       releaseName: monitoring
+      values: |
+        grafana:
+          sidecar:
+            dashboards:
+              enabled: true
+            datasources:
+              enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

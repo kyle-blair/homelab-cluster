@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - grafana-datasource.yaml
+  - grafana-ingress.yaml
+  - grafana-certificate.yaml
+  - prometheus-ingress.yaml
+  - prometheus-certificate.yaml
+  - alertmanager-ingress.yaml
+  - alertmanager-certificate.yaml
