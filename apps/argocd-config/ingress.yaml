@@ -8,7 +8,7 @@ metadata:
   name: argocd-server-ingress
   namespace: argocd
 spec:
-  ingressClassName: public
+  ingressClassName: nginx
   rules:
   - host: argocd.home.arpa
     http:
