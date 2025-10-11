@@ -7,3 +7,5 @@ resources:
   - apps/ingress.yaml
   - apps/load-balancer.yaml
   - apps/local-path-storage.yaml
+  - apps/logging.yaml
+  - apps/monitoring.yaml
