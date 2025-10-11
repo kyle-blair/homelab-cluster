@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/argoproj/argo-cd.git
-    targetRevision: v2.12.3
+    targetRevision: v3.1.8
     path: manifests/cluster-install
   destination:
     server: https://kubernetes.default.svc
