@@ -17,6 +17,6 @@ spec:
   syncPolicy:
     automated:
       selfHeal: true
-      prune: false    # start with prune off when adopting an existing install
+      prune: true
     syncOptions:
       - CreateNamespace=true
