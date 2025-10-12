@@ -3,13 +3,13 @@ kind: Kustomization
 resources:
   - apps/argocd-config.yaml
   - apps/argocd.yaml
+  - apps/auth-gateway.yaml
   - apps/cert-manager.yaml
-  - apps/sealed-secrets.yaml
   - apps/ingress.yaml
+  - apps/ldap.yaml
   - apps/load-balancer.yaml
   - apps/local-path-storage.yaml
   - apps/logging.yaml
-  - apps/ldap.yaml
-  - apps/auth-gateway.yaml
   - apps/monitoring-config.yaml
   - apps/monitoring.yaml
+  - apps/sealed-secrets.yaml
