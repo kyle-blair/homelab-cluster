@@ -1,0 +1,61 @@
+# Authelia minimal configuration for LDAP-backed auth and NGINX forward-auth
+server:
+  address: 'tcp://0.0.0.0:9091'
+
+log:
+  level: info
+
+theme: dark
+
+default_redirection_url: https://grafana.home.arpa
+
+session:
+  name: authelia_session
+  same_site: lax
+  expiration: 1h
+  inactivity: 15m
+  domain: home.arpa
+  # secret provided via env: AUTHELIA_SESSION_SECRET
+
+storage:
+  local:
+    path: /var/lib/authelia/db.sqlite3
+  # encryption_key via env: AUTHELIA_STORAGE_ENCRYPTION_KEY
+
+authentication_backend:
+  password_reset:
+    disable: true
+  ldap:
+    implementation: custom
+    address: ldap://ldap.auth.svc.cluster.local:389
+    timeout: 5s
+    start_tls: false
+    base_dn: dc=home,dc=arpa
+    username_attribute: uid
+    additional_users_dn: ou=people
+    users_filter: '(&(objectClass=person)(uid={input}))'
+    additional_groups_dn: ou=groups
+    groups_filter: '(|(member={dn})(uniqueMember={dn}))'
+    group_name_attribute: cn
+    mail_attribute: mail
+    display_name_attribute: cn
+    user: cn=admin,dc=home,dc=arpa
+    # password via env: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain:
+        - home.arpa
+        - '*.home.arpa'
+      policy: one_factor
+      subject:
+        - 'group:admins'
+
+notifier:
+  disable_startup_check: true
+  filesystem:
+    filename: /var/lib/authelia/notification.txt
+
+# JWT secret via env: AUTHELIA_JWT_SECRET
+

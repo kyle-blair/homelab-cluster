@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-gateway
+  namespace: auth
+  labels:
+    app: auth-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-gateway
+  template:
+    metadata:
+      labels:
+        app: auth-gateway
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: auth-gateway
+          image: authelia/authelia:4.38.8
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9091
+          env:
+            - name: AUTHELIA_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-gateway-secrets
+                  key: JWT_SECRET
+            - name: AUTHELIA_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-gateway-secrets
+                  key: SESSION_SECRET
+            - name: AUTHELIA_STORAGE_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: auth-gateway-secrets
+                  key: STORAGE_ENCRYPTION_KEY
+            - name: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-gateway-secrets
+                  key: LDAP_PASSWORD
+          volumeMounts:
+            - name: config
+              mountPath: /config/configuration.yml
+              subPath: configuration.yaml
+            - name: data
+              mountPath: /var/lib/authelia
+      volumes:
+        - name: config
+          configMap:
+            name: auth-gateway-config
+            items:
+              - key: configuration.yaml
+                path: configuration.yaml
+        - name: data
+          persistentVolumeClaim:
+            claimName: auth-gateway-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: auth-gateway-data
+  namespace: auth
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+

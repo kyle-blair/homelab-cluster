@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ldap
+  namespace: auth
+  labels:
+    app: ldap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ldap
+  template:
+    metadata:
+      labels:
+        app: ldap
+    spec:
+      containers:
+        - name: ldap
+          image: osixia/openldap:1.5.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: ldap
+              containerPort: 389
+          env:
+            - name: LDAP_ORGANISATION
+              value: homelab
+            - name: LDAP_DOMAIN
+              value: home.arpa
+            - name: LDAP_BASE_DN
+              value: dc=home,dc=arpa
+            - name: LDAP_ALLOW_ANONYMOUS_BIND
+              value: "false"
+            - name: LDAP_REMOVE_CONFIG_AFTER_SETUP
+              value: "true"
+            - name: LDAP_READONLY_USER
+              value: "false"
+            - name: LDAP_TLS
+              value: "false"
+            - name: LDAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ldap-admin
+                  key: LDAP_ADMIN_PASSWORD
+            - name: LDAP_CONFIG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ldap-admin
+                  key: LDAP_CONFIG_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/ldap
+            - name: config
+              mountPath: /etc/ldap/slapd.d
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ldap-data
+        - name: config
+          persistentVolumeClaim:
+            claimName: ldap-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ldap-data
+  namespace: auth
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ldap-config
+  namespace: auth
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
