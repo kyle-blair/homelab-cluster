@@ -1,6 +1,10 @@
 # homelab-cluster
 
-A declarative, version-controlled kubernetes cluster managed by Argo CD.
+A declarative, version-controlled kubernetes cluster managed using continuous delivery.
+
+## prerequisites
+
+A kubernetes cluster accessible from your current machine.
 
 ## Bootstrap
 
