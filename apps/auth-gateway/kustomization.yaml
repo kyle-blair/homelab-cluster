@@ -5,6 +5,8 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - auth-gateway-secrets.sealed.yaml
+  - auth-admin-user.sealed.yaml
 configMapGenerator:
   - name: auth-gateway-config
     files:

@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - install.yaml
   - internal-ca-issuer.yaml
+  - internal-ca.sealed.yaml
 namespace: cert-manager
