@@ -1,0 +1,8 @@
+all:
+  hosts:
+    control-1:
+      ansible_host: 192.0.2.11
+      ansible_user: operator
+    worker-1:
+      ansible_host: 192.0.2.21
+      ansible_user: operator

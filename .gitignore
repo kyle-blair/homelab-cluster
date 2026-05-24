@@ -1,0 +1,7 @@
+infrastructure/hosts.yaml
+infrastructure/artifacts/
+
+*.key
+*.pem
+*.crt
+

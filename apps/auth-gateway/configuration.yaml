@@ -1,4 +1,4 @@
-# Authelia minimal configuration for LDAP-backed auth and NGINX forward-auth
+# Authelia configuration for LDAP-backed auth, forward-auth, and OIDC
 server:
   address: 'tcp://0.0.0.0:9091'
 
@@ -52,10 +52,28 @@ access_control:
       subject:
         - 'group:admins'
 
+identity_providers:
+  oidc:
+    jwks:
+      - key: {{ secret "/config/secrets/OIDC_JWKS_KEY" | mindent 10 "|" | msquote }}
+    clients:
+      - client_id: argocd
+        client_name: Argo CD
+        public: true
+        authorization_policy: one_factor
+        redirect_uris:
+          - https://argocd.home.arpa/auth/callback
+          - http://localhost:8085/auth/callback
+        scopes:
+          - openid
+          - profile
+          - email
+          - groups
+        token_endpoint_auth_method: none
+
 notifier:
   disable_startup_check: true
   filesystem:
     filename: /var/lib/authelia/notification.txt
 
 # JWT secret via env: AUTHELIA_JWT_SECRET
-

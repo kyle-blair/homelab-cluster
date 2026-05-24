@@ -1,68 +1,54 @@
-Sealed Secrets Setup
+# Sealed Secrets
 
-This repo deploys the Bitnami Sealed Secrets controller via Argo CD (`root/apps/sealed-secrets.yaml`).
+This repo deploys the Bitnami Sealed Secrets controller via Argo CD
+(`root/apps/sealed-secrets.yaml`). Cluster secrets that are hard dependencies
+for repo-defined services are stored as encrypted `SealedSecret` manifests under
+`apps/` and are decrypted in-cluster by that controller.
 
-Steps to create sealed secrets for LDAP and the auth gateway:
+## Bootstrap workflow
 
-1) Install kubeseal (workstation)
+Install `kubeseal` on the workstation before running the full bootstrap:
+
 - macOS: `brew install kubeseal`
-- Linux: see https://github.com/bitnami-labs/sealed-secrets
+- Linux: install from the Bitnami Sealed Secrets project releases
 
-2) (Optional) Fetch the cluster public key
-- `kubeseal --controller-name=sealed-secrets-controller --controller-namespace kube-system --fetch-cert > sealed-secrets.pem`
+On a fresh cluster, run:
 
-3) Create the Kubernetes Secret manifests locally (do not commit)
-
-ldap-admin.yaml
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ldap-admin
-  namespace: auth
-stringData:
-  LDAP_ADMIN_PASSWORD: "<strong-password>"
-  LDAP_CONFIG_PASSWORD: "<strong-password>"
+```shell
+./scripts/full-bootstrap.sh \
+  --ca-crt path/to/intermediate-ca.crt \
+  --ca-key path/to/intermediate-ca.key
 ```
 
-auth-gateway-secrets.yaml
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: auth-gateway-secrets
-  namespace: auth
-stringData:
-  JWT_SECRET: "<32+ char random>"
-  SESSION_SECRET: "<32+ char random>"
-  STORAGE_ENCRYPTION_KEY: "<32+ char random>"
-  LDAP_PASSWORD: "<matches LDAP_ADMIN_PASSWORD>"
-```
+The first pass installs Argo CD and Sealed Secrets, then writes any missing
+sealed secret manifests:
 
-4) Seal them and save as Git-tracked SealedSecret manifests
+- `apps/cert-manager/internal-ca.sealed.yaml`
+- `apps/ldap/ldap-admin.sealed.yaml`
+- `apps/auth-gateway/auth-gateway-secrets.sealed.yaml`
+- `apps/auth-gateway/auth-admin-user.sealed.yaml`
 
-Option A (auto fetch cert)
-```
-kubeseal -o yaml < ldap-admin.yaml > apps/auth/ldap-admin.sealed.yaml \
-  --controller-name=sealed-secrets-controller --controller-namespace=kube-system
+Commit and push those generated files, then rerun `scripts/full-bootstrap.sh`.
+Argo CD will sync the committed desired state, the Sealed Secrets controller
+will create the live Kubernetes Secrets, and the script will continue through
+LDAP admin user seeding and validation.
 
-kubeseal -o yaml < auth-gateway-secrets.yaml > apps/auth/auth-gateway-secrets.sealed.yaml \
-  --controller-name=sealed-secrets-controller --controller-namespace=kube-system
-```
+The internal CA must be an intermediate CA that you provide. The repo and
+bootstrap scripts do not create or require your root authority key.
 
-Option B (use fetched cert)
-```
-kubeseal --cert sealed-secrets.pem -o yaml < ldap-admin.yaml > apps/auth/ldap-admin.sealed.yaml
-kubeseal --cert sealed-secrets.pem -o yaml < auth-gateway-secrets.yaml > apps/auth/auth-gateway-secrets.sealed.yaml
+## Rotation
+
+Rotate a secret by creating a new Kubernetes Secret manifest with the same
+`metadata.name` and `metadata.namespace`, sealing it with `kubeseal`, and
+replacing the corresponding `*.sealed.yaml` file in `apps/`.
+
+For the internal CA only, this helper performs the local manifest creation and
+sealing:
+
+```shell
+./scripts/provision-internal-ca.sh path/to/intermediate-ca.crt path/to/intermediate-ca.key
 ```
 
-5) Commit the sealed secrets
-- Add the generated files under `apps/auth/` to Git and push.
-
-6) Ensure they are applied
-- Add the files to a Kustomization under `apps/auth/kustomization.yaml` or include them in an existing app path applied by Argo CD.
-- Alternatively: `kubectl apply -f apps/auth/`.
-
-Notes
-- LDAP and auth-gateway Deployments reference these Secrets by name; they become usable once decrypted by the controller.
-- Rotate by re-sealing a new Secret with the same name/namespace.
+Commit and push the changed sealed manifest so Argo CD can sync it. Do not apply
+replacement Secrets directly to the cluster; that bypasses the repo-owned state
+and can leave Argo CD reporting drift.
