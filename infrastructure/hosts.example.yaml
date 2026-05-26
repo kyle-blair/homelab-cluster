@@ -1,4 +1,7 @@
 all:
+  vars:
+    kube_proxy_strict_arp: true
+
   hosts:
     node0:
       ansible_host: 10.0.20.20
