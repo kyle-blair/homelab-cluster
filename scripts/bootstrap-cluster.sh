@@ -17,6 +17,14 @@ kubectl wait \
   --timeout=120s \
   crd/applications.argoproj.io
 
+echo "[bootstrap] Waiting for Argo CD controllers"
+kubectl rollout status statefulset/argocd-application-controller \
+  --namespace argocd \
+  --timeout=300s
+kubectl rollout status deployment/argocd-repo-server \
+  --namespace argocd \
+  --timeout=300s
+
 echo "[bootstrap] Registering root source repository"
 kubectl apply --namespace argocd --filename "${REPO_ROOT}/apps/argocd-config/source-repository.yaml"
 

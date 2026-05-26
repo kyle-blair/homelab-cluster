@@ -20,8 +20,8 @@ On a fresh cluster, run:
   --ca-key path/to/intermediate-ca.key
 ```
 
-The first pass installs Argo CD and Sealed Secrets, then writes any missing
-sealed secret manifests:
+The first pass installs Argo CD and Sealed Secrets, then writes any missing or
+undecryptable sealed secret manifests:
 
 - `apps/cert-manager/internal-ca.sealed.yaml`
 - `apps/ldap/ldap-admin.sealed.yaml`
@@ -32,6 +32,20 @@ Commit and push those generated files, then rerun `scripts/full-bootstrap.sh`.
 Argo CD will sync the committed desired state, the Sealed Secrets controller
 will create the live Kubernetes Secrets, and the script will continue through
 LDAP admin user seeding and validation.
+
+SealedSecret manifests are encrypted for one Sealed Secrets controller key. On
+a rebuilt cluster where that key was not restored, rerun bootstrap with the
+intermediate CA inputs:
+
+```shell
+./scripts/full-bootstrap.sh \
+  --ca-crt path/to/intermediate-ca.crt \
+  --ca-key path/to/intermediate-ca.key
+```
+
+Bootstrap validates existing SealedSecret manifests against the current
+controller and regenerates the repo-owned manifests that cannot be decrypted.
+Commit and push regenerated manifests, then rerun bootstrap.
 
 The internal CA must be an intermediate CA that you provide. The repo and
 bootstrap scripts do not create or require your root authority key.

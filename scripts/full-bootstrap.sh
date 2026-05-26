@@ -339,9 +339,30 @@ seal_secret_manifest() {
   REPO_CONFIG_CHANGED=true
 }
 
+sealed_secret_valid() {
+  local path=$1
+
+  [ -f "$path" ] || return 1
+  kubeseal \
+    --controller-name=sealed-secrets-controller \
+    --controller-namespace=kube-system \
+    --validate \
+    <"$path" >/dev/null 2>&1
+}
+
+sealed_secret_needs_update() {
+  local path=$1
+
+  if sealed_secret_valid "$path"; then
+    return 1
+  fi
+
+  return 0
+}
+
 wait_for_sealed_secrets() {
   echo "[full-bootstrap] Waiting for Sealed Secrets controller"
-  wait_for_resource application/sealed-secrets argocd "Sealed Secrets Argo CD application"
+  wait_for_argocd_application sealed-secrets "Sealed Secrets Argo CD application"
 
   kubectl wait \
     --for condition=Established \
@@ -355,6 +376,7 @@ wait_for_sealed_secrets() {
 
 ensure_sealed_secret_manifests() {
   require_command kubectl
+  require_command kubeseal
   require_command openssl
 
   REPO_CONFIG_CHANGED=false
@@ -363,12 +385,39 @@ ensure_sealed_secret_manifests() {
   tmp_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_dir"' RETURN
   local bootstrap_ldap_admin_password=""
+  local internal_ca_target="${REPO_ROOT}/apps/cert-manager/internal-ca.sealed.yaml"
+  local ldap_admin_target="${REPO_ROOT}/apps/ldap/ldap-admin.sealed.yaml"
+  local auth_gateway_target="${REPO_ROOT}/apps/auth-gateway/auth-gateway-secrets.sealed.yaml"
+  local auth_admin_target="${REPO_ROOT}/apps/auth-gateway/auth-admin-user.sealed.yaml"
+  local update_internal_ca=false
+  local update_ldap_admin=false
+  local update_auth_gateway=false
+  local update_auth_admin=false
 
-  if [ ! -f "${REPO_ROOT}/apps/ldap/ldap-admin.sealed.yaml" ] || [ ! -f "${REPO_ROOT}/apps/auth-gateway/auth-gateway-secrets.sealed.yaml" ]; then
+  if sealed_secret_needs_update "$internal_ca_target"; then
+    update_internal_ca=true
+  fi
+  if sealed_secret_needs_update "$ldap_admin_target"; then
+    update_ldap_admin=true
+  fi
+  if sealed_secret_needs_update "$auth_gateway_target"; then
+    update_auth_gateway=true
+  fi
+  if sealed_secret_needs_update "$auth_admin_target"; then
+    update_auth_admin=true
+  fi
+
+  if [ "$update_ldap_admin" = true ] || [ "$update_auth_gateway" = true ]; then
     bootstrap_ldap_admin_password="$(value_or_random auth ldap-admin LDAP_ADMIN_PASSWORD)"
   fi
 
-  if [ ! -f "${REPO_ROOT}/apps/cert-manager/internal-ca.sealed.yaml" ]; then
+  if [ "$update_internal_ca" = true ]; then
+    if [ -z "$CA_CRT" ] || [ -z "$CA_KEY" ]; then
+      echo "Internal CA input is required because the current cluster cannot decrypt apps/cert-manager/internal-ca.sealed.yaml." >&2
+      echo "Pass --ca-crt and --ca-key for an intermediate CA signed by your root authority." >&2
+      exit 64
+    fi
+
     echo "[full-bootstrap] Sealing cert-manager internal CA into the repo"
     kubectl create secret tls internal-ca \
       --namespace cert-manager \
@@ -376,11 +425,11 @@ ensure_sealed_secret_manifests() {
       --key "$CA_KEY" \
       --dry-run=client \
       -o yaml >"${tmp_dir}/internal-ca.yaml"
-    seal_secret_manifest "${tmp_dir}/internal-ca.yaml" "${REPO_ROOT}/apps/cert-manager/internal-ca.sealed.yaml"
+    seal_secret_manifest "${tmp_dir}/internal-ca.yaml" "$internal_ca_target"
     cp "$CA_CRT" "${ARTIFACTS_DIR}/internal-ca.crt"
   fi
 
-  if [ ! -f "${REPO_ROOT}/apps/ldap/ldap-admin.sealed.yaml" ]; then
+  if [ "$update_ldap_admin" = true ]; then
     echo "[full-bootstrap] Sealing LDAP admin secret into the repo"
     local ldap_admin_password
     local ldap_config_password
@@ -392,10 +441,10 @@ ensure_sealed_secret_manifests() {
       --from-literal "LDAP_CONFIG_PASSWORD=${ldap_config_password}" \
       --dry-run=client \
       -o yaml >"${tmp_dir}/ldap-admin.yaml"
-    seal_secret_manifest "${tmp_dir}/ldap-admin.yaml" "${REPO_ROOT}/apps/ldap/ldap-admin.sealed.yaml"
+    seal_secret_manifest "${tmp_dir}/ldap-admin.yaml" "$ldap_admin_target"
   fi
 
-  if [ ! -f "${REPO_ROOT}/apps/auth-gateway/auth-gateway-secrets.sealed.yaml" ]; then
+  if [ "$update_auth_gateway" = true ]; then
     echo "[full-bootstrap] Sealing auth gateway secret into the repo"
     local jwt_secret
     local session_secret
@@ -427,10 +476,10 @@ ensure_sealed_secret_manifests() {
       --from-literal "OIDC_JWKS_KEY=${oidc_jwks_key}" \
       --dry-run=client \
       -o yaml >"${tmp_dir}/auth-gateway-secrets.yaml"
-    seal_secret_manifest "${tmp_dir}/auth-gateway-secrets.yaml" "${REPO_ROOT}/apps/auth-gateway/auth-gateway-secrets.sealed.yaml"
+    seal_secret_manifest "${tmp_dir}/auth-gateway-secrets.yaml" "$auth_gateway_target"
   fi
 
-  if [ ! -f "${REPO_ROOT}/apps/auth-gateway/auth-admin-user.sealed.yaml" ]; then
+  if [ "$update_auth_admin" = true ]; then
     echo "[full-bootstrap] Sealing LDAP admin user into the repo"
     local auth_admin_password
     auth_admin_password="$(value_or_random auth auth-admin-user PASSWORD)"
@@ -442,19 +491,19 @@ ensure_sealed_secret_manifests() {
       --from-literal "PASSWORD=${auth_admin_password}" \
       --dry-run=client \
       -o yaml >"${tmp_dir}/auth-admin-user.yaml"
-    seal_secret_manifest "${tmp_dir}/auth-admin-user.yaml" "${REPO_ROOT}/apps/auth-gateway/auth-admin-user.sealed.yaml"
+    seal_secret_manifest "${tmp_dir}/auth-admin-user.yaml" "$auth_admin_target"
   fi
 
-  if [ -f "${REPO_ROOT}/apps/cert-manager/internal-ca.sealed.yaml" ]; then
+  if [ -f "$internal_ca_target" ]; then
     add_kustomization_resource "${REPO_ROOT}/apps/cert-manager/kustomization.yaml" "internal-ca.sealed.yaml"
   fi
-  if [ -f "${REPO_ROOT}/apps/ldap/ldap-admin.sealed.yaml" ]; then
+  if [ -f "$ldap_admin_target" ]; then
     add_kustomization_resource "${REPO_ROOT}/apps/ldap/kustomization.yaml" "ldap-admin.sealed.yaml"
   fi
-  if [ -f "${REPO_ROOT}/apps/auth-gateway/auth-gateway-secrets.sealed.yaml" ]; then
+  if [ -f "$auth_gateway_target" ]; then
     add_kustomization_resource "${REPO_ROOT}/apps/auth-gateway/kustomization.yaml" "auth-gateway-secrets.sealed.yaml"
   fi
-  if [ -f "${REPO_ROOT}/apps/auth-gateway/auth-admin-user.sealed.yaml" ]; then
+  if [ -f "$auth_admin_target" ]; then
     add_kustomization_resource "${REPO_ROOT}/apps/auth-gateway/kustomization.yaml" "auth-admin-user.sealed.yaml"
   fi
 
@@ -672,6 +721,65 @@ wait_for_resource() {
   done
 
   echo "Timed out waiting for $description." >&2
+  return 1
+}
+
+print_sealed_secret_diagnostics() {
+  local name=$1
+  local namespace=$2
+
+  echo "[full-bootstrap] Diagnostics for sealedsecret/$name in namespace $namespace" >&2
+  kubectl get "sealedsecret/${name}" --namespace "$namespace" --output wide >&2 || true
+  kubectl describe "sealedsecret/${name}" --namespace "$namespace" >&2 || true
+}
+
+print_namespace_events() {
+  local namespace=$1
+
+  echo "[full-bootstrap] Recent events in namespace $namespace" >&2
+  kubectl get events --namespace "$namespace" --sort-by=.lastTimestamp >&2 || true
+}
+
+wait_for_secret_from_sealed_secret() {
+  local secret=$1
+  local namespace=$2
+  local description=$3
+
+  if wait_for_resource "secret/${secret}" "$namespace" "$description"; then
+    return 0
+  fi
+
+  print_sealed_secret_diagnostics "$secret" "$namespace"
+  print_namespace_events "$namespace"
+  echo "[full-bootstrap] Recent Sealed Secrets controller logs" >&2
+  kubectl logs deployment/sealed-secrets-controller \
+    --namespace kube-system \
+    --tail=80 >&2 || true
+  return 1
+}
+
+print_application_diagnostics() {
+  local app=$1
+
+  echo "[full-bootstrap] Diagnostics for application/$app" >&2
+  kubectl get "application/${app}" --namespace argocd --output wide >&2 || true
+  kubectl describe "application/${app}" --namespace argocd >&2 || true
+}
+
+wait_for_argocd_application() {
+  local app=$1
+  local description=$2
+
+  if wait_for_resource "application/${app}" argocd "$description"; then
+    return 0
+  fi
+
+  print_application_diagnostics argocd-root-app
+  if [ "$app" != "argocd-root-app" ]; then
+    print_application_diagnostics "$app"
+  fi
+  echo "[full-bootstrap] Recent Argo CD events" >&2
+  kubectl get events --namespace argocd --sort-by=.lastTimestamp >&2 || true
   return 1
 }
 
@@ -913,10 +1021,10 @@ wait_for_api
 bootstrap_argocd
 wait_for_sealed_secrets
 ensure_sealed_secret_manifests
-wait_for_resource secret/internal-ca cert-manager "cert-manager internal CA secret"
-wait_for_resource secret/ldap-admin auth "LDAP admin secret"
-wait_for_resource secret/auth-gateway-secrets auth "auth gateway secret"
-wait_for_resource secret/auth-admin-user auth "auth admin user secret"
+wait_for_secret_from_sealed_secret internal-ca cert-manager "cert-manager internal CA secret"
+wait_for_secret_from_sealed_secret ldap-admin auth "LDAP admin secret"
+wait_for_secret_from_sealed_secret auth-gateway-secrets auth "auth gateway secret"
+wait_for_secret_from_sealed_secret auth-admin-user auth "auth admin user secret"
 seed_ldap_identity
 configure_argocd_cli
 validate_argocd_bootstrap

@@ -54,6 +54,11 @@ rerun bootstrap. On a fresh cluster this means the first run installs Argo CD
 and Sealed Secrets, writes encrypted `SealedSecret` manifests to `apps/`, and
 exits before dependent apps need those secrets.
 
+SealedSecret manifests are tied to the Sealed Secrets controller key. During
+bootstrap, existing manifests are validated against the current controller and
+regenerated when they cannot be decrypted. Commit and push regenerated
+manifests, then rerun bootstrap.
+
 ## Ownership
 
 Argo CD owns the manifests under `root/` and `apps/`. The bootstrap scripts only
@@ -120,6 +125,16 @@ The bootstrap seals that intermediate CA into
 `apps/cert-manager/internal-ca.sealed.yaml` and adds it to the cert-manager
 kustomization. Commit and push the generated sealed manifest before rerunning
 bootstrap so Argo CD can create the live `internal-ca` Secret.
+
+For a rebuilt cluster with a new Sealed Secrets controller key, rerun bootstrap
+with the intermediate CA inputs. Bootstrap validates the existing sealed CA
+against the current controller and regenerates it when needed:
+
+```shell
+./scripts/full-bootstrap.sh \
+  --ca-crt path/to/ca.crt \
+  --ca-key path/to/ca.key
+```
 
 To rerun only the CA sealing step after Sealed Secrets exists in the cluster:
 
