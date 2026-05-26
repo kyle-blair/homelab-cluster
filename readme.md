@@ -6,8 +6,10 @@ A declarative, version-controlled kubernetes cluster managed using continuous de
 
 - Podman, if building the cluster with Kubespray from this repo.
 - kubectl configured for the cluster before bootstrapping apps. When Kubespray is
-  run by `scripts/full-bootstrap.sh`, the script uses the generated
-  `infrastructure/artifacts/admin.conf` kubeconfig if Kubespray writes it.
+  run by `scripts/full-bootstrap.sh`, the script uses local `ssh` and `scp` to fetch
+  `/etc/kubernetes/admin.conf` from the first control-plane host to
+  `infrastructure/artifacts/admin.conf` and uses it for the remaining bootstrap
+  steps.
 
 ## Full Bootstrap
 
@@ -81,6 +83,9 @@ The script can be overridden with environment variables:
 - `KUBESPRAY_IMAGE`: Kubespray container image, default
   `quay.io/kubespray/kubespray:v2.31.0`.
 - `KUBESPRAY_PLAYBOOK`: Kubespray playbook, default `cluster.yml`.
+- `KUBECONFIG_SSH_TARGET`: SSH target used to fetch
+  `/etc/kubernetes/admin.conf`, default first `kube_control_plane` inventory
+  host.
 - `ARGOCD_CLI_LOGIN`: log the local `argocd` CLI in through SSO after bootstrap
   when the CLI is installed, default `false`.
 - `ARGOCD_CLI_SERVER`: Argo CD ingress hostname used for `argocd login`,

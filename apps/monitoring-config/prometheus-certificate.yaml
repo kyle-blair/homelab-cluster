@@ -3,9 +3,9 @@ kind: Certificate
 metadata:
   name: prometheus-cert
 spec:
-  commonName: prometheus.home.arpa
+  commonName: prometheus.0x42labs.net
   dnsNames:
-  - prometheus.home.arpa
+  - prometheus.0x42labs.net
   duration: 8760h
   issuerRef:
     kind: ClusterIssuer

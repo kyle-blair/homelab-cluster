@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: argocd.home.arpa
+  - host: argocd.0x42labs.net
     http:
       paths:
       - backend:
@@ -23,5 +23,5 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - argocd.home.arpa
+    - argocd.0x42labs.net
     secretName: argocd-tls

@@ -9,7 +9,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: auth.home.arpa
+  - host: auth.0x42labs.net
     http:
       paths:
       - path: /
@@ -21,6 +21,6 @@ spec:
               number: 80
   tls:
   - hosts:
-    - auth.home.arpa
+    - auth.0x42labs.net
     secretName: auth-gateway-tls
 

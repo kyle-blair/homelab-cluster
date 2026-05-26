@@ -3,9 +3,9 @@ kind: Certificate
 metadata:
   name: grafana-cert
 spec:
-  commonName: grafana.home.arpa
+  commonName: grafana.0x42labs.net
   dnsNames:
-  - grafana.home.arpa
+  - grafana.0x42labs.net
   duration: 8760h
   issuerRef:
     kind: ClusterIssuer

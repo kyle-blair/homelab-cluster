@@ -4,6 +4,7 @@ set -euo pipefail
 : "${ARGOCD_VERSION:=v3.1.8}"
 : "${KUBESPRAY_IMAGE:=quay.io/kubespray/kubespray:v2.31.0}"
 : "${KUBESPRAY_PLAYBOOK:=cluster.yml}"
+: "${KUBECONFIG_SSH_TARGET:=}"
 : "${CLUSTER_DOMAIN:=home.arpa}"
 : "${ARGOCD_CLI_LOGIN:=false}"
 : "${ARGOCD_CLI_SERVER:=argocd.${CLUSTER_DOMAIN}}"
@@ -38,9 +39,9 @@ Options:
                                Update the repo-defined MetalLB range.
   --domain DOMAIN              Update repo-defined service domains.
                                Default: home.arpa
-  --ssh-private-key PATH       SSH key mounted into the Kubespray container.
+  --ssh-private-key PATH       SSH key used for Kubespray and kubeconfig fetch.
                                Default: ~/.ssh/id_rsa
-  --ssh-known-hosts PATH       SSH known_hosts file mounted into the Kubespray container.
+  --ssh-known-hosts PATH       SSH known_hosts file used for host verification.
                                Default: ~/.ssh/known_hosts
   --ca-crt PATH                Intermediate CA certificate for cert-manager.
                                Required until apps/cert-manager/internal-ca.sealed.yaml exists.
@@ -59,6 +60,8 @@ Environment:
                                Default: quay.io/kubespray/kubespray:v2.31.0
   KUBESPRAY_PLAYBOOK           Kubespray playbook inside the container.
                                Default: cluster.yml
+  KUBECONFIG_SSH_TARGET        SSH target used to fetch admin.conf.
+                               Default: first kube_control_plane inventory host.
   ARGOCD_CLI_LOGIN             Log the local argocd CLI in after bootstrap.
                                Default: false
   ARGOCD_CLI_SERVER            Argo CD ingress hostname used for argocd CLI login.
@@ -143,6 +146,35 @@ require_command() {
     echo "Required command not found: $1" >&2
     exit 69
   fi
+}
+
+resolve_kubeconfig_ssh_target() {
+  if [ -n "$KUBECONFIG_SSH_TARGET" ]; then
+    printf '%s\n' "$KUBECONFIG_SSH_TARGET"
+    return 0
+  fi
+
+  require_command ruby
+  ruby -ryaml -e '
+    inventory = YAML.load_file(ARGV.fetch(0))
+    all = inventory.fetch("all", {})
+    all_hosts = all.fetch("hosts", {}) || {}
+    control_hosts = all.dig("children", "kube_control_plane", "hosts") || {}
+    host_name = control_hosts.keys.first || all_hosts.keys.find { |name| name =~ /control|master/i } || all_hosts.keys.first
+
+    if host_name.nil?
+      warn "No hosts found in inventory"
+      exit 66
+    end
+
+    attrs = {}
+    attrs.merge!(all_hosts.fetch(host_name, {}) || {})
+    attrs.merge!(control_hosts.fetch(host_name, {}) || {})
+    host = attrs["ansible_host"] || attrs["access_ip"] || attrs["ip"] || host_name
+    user = attrs["ansible_user"]
+
+    puts user ? "#{user}@#{host}" : host
+  ' "$HOSTS_PATH"
 }
 
 validate_inputs() {
@@ -442,6 +474,8 @@ ensure_sealed_secret_manifests() {
 
 run_kubespray() {
   require_command podman
+  require_command ssh
+  require_command scp
 
   if [ ! -f "$HOSTS_PATH" ]; then
     echo "Hosts inventory not found at $HOSTS_PATH" >&2
@@ -469,11 +503,15 @@ run_kubespray() {
   fi
 
   local podman_known_hosts_args=()
+  local ssh_known_hosts_args=()
   if [ -f "$SSH_KNOWN_HOSTS" ]; then
     local known_hosts_abs
     known_hosts_abs="$(cd "$(dirname "$SSH_KNOWN_HOSTS")" && pwd)/$(basename "$SSH_KNOWN_HOSTS")"
     podman_known_hosts_args=(
       --mount "type=bind,src=${known_hosts_abs},dst=/root/.ssh/known_hosts,ro=true"
+    )
+    ssh_known_hosts_args=(
+      -o "UserKnownHostsFile=${known_hosts_abs}"
     )
   else
     echo "[full-bootstrap] SSH known_hosts not found at $SSH_KNOWN_HOSTS; Kubespray may fail host key checks"
@@ -492,7 +530,25 @@ run_kubespray() {
       --become \
       "$KUBESPRAY_PLAYBOOK"
 
+  local kubeconfig_ssh_target
+  kubeconfig_ssh_target="$(resolve_kubeconfig_ssh_target)"
+  local remote_kubeconfig
+  remote_kubeconfig="/tmp/homelab-admin.conf-${RANDOM}-$$"
+
+  echo "[full-bootstrap] Fetching kubeconfig from ${kubeconfig_ssh_target} to $GENERATED_KUBECONFIG"
+  ssh -i "$ssh_key_abs" "${ssh_known_hosts_args[@]}" "$kubeconfig_ssh_target" \
+    "sudo install -m 0600 -o \$(id -u) -g \$(id -g) /etc/kubernetes/admin.conf '${remote_kubeconfig}'"
+  if ! scp -i "$ssh_key_abs" "${ssh_known_hosts_args[@]}" \
+    "${kubeconfig_ssh_target}:${remote_kubeconfig}" "$GENERATED_KUBECONFIG"; then
+    ssh -i "$ssh_key_abs" "${ssh_known_hosts_args[@]}" "$kubeconfig_ssh_target" \
+      "rm -f '${remote_kubeconfig}'" || true
+    exit 69
+  fi
+  ssh -i "$ssh_key_abs" "${ssh_known_hosts_args[@]}" "$kubeconfig_ssh_target" \
+    "rm -f '${remote_kubeconfig}'"
+
   if [ -f "$GENERATED_KUBECONFIG" ]; then
+    chmod 0600 "$GENERATED_KUBECONFIG"
     export KUBECONFIG="$GENERATED_KUBECONFIG"
     echo "[full-bootstrap] Using generated kubeconfig at $GENERATED_KUBECONFIG"
   fi

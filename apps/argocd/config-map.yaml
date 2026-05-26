@@ -3,11 +3,11 @@ kind: ConfigMap
 metadata:
   name: argocd-cm
 data:
-  url: https://argocd.home.arpa
+  url: https://argocd.0x42labs.net
   admin.enabled: "false"
   oidc.config: |
     name: Auth Gateway
-    issuer: https://auth.home.arpa
+    issuer: https://auth.0x42labs.net
     clientID: argocd
     enablePKCEAuthentication: true
     requestedScopes:

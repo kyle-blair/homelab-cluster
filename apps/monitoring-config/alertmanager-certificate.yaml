@@ -3,9 +3,9 @@ kind: Certificate
 metadata:
   name: alertmanager-cert
 spec:
-  commonName: alertmanager.home.arpa
+  commonName: alertmanager.0x42labs.net
   dnsNames:
-  - alertmanager.home.arpa
+  - alertmanager.0x42labs.net
   duration: 8760h
   issuerRef:
     kind: ClusterIssuer

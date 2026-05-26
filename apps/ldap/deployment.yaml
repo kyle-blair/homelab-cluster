@@ -26,9 +26,9 @@ spec:
             - name: LDAP_ORGANISATION
               value: homelab
             - name: LDAP_DOMAIN
-              value: home.arpa
+              value: 0x42labs.net
             - name: LDAP_BASE_DN
-              value: dc=home,dc=arpa
+              value: dc=0x42labs,dc=net
             - name: LDAP_ALLOW_ANONYMOUS_BIND
               value: "false"
             - name: LDAP_REMOVE_CONFIG_AFTER_SETUP

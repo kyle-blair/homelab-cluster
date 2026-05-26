@@ -7,14 +7,14 @@ log:
 
 theme: dark
 
-default_redirection_url: https://grafana.home.arpa
+default_redirection_url: https://grafana.0x42labs.net
 
 session:
   name: authelia_session
   same_site: lax
   expiration: 1h
   inactivity: 15m
-  domain: home.arpa
+  domain: 0x42labs.net
   # secret provided via env: AUTHELIA_SESSION_SECRET
 
 storage:
@@ -30,7 +30,7 @@ authentication_backend:
     address: ldap://ldap.auth.svc.cluster.local:389
     timeout: 5s
     start_tls: false
-    base_dn: dc=home,dc=arpa
+    base_dn: dc=0x42labs,dc=net
     username_attribute: uid
     additional_users_dn: ou=people
     users_filter: '(&(objectClass=person)(uid={input}))'
@@ -39,15 +39,15 @@ authentication_backend:
     group_name_attribute: cn
     mail_attribute: mail
     display_name_attribute: cn
-    user: cn=admin,dc=home,dc=arpa
+    user: cn=admin,dc=0x42labs,dc=net
     # password via env: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD
 
 access_control:
   default_policy: deny
   rules:
     - domain:
-        - home.arpa
-        - '*.home.arpa'
+        - 0x42labs.net
+        - '*.0x42labs.net'
       policy: one_factor
       subject:
         - 'group:admins'
@@ -62,7 +62,7 @@ identity_providers:
         public: true
         authorization_policy: one_factor
         redirect_uris:
-          - https://argocd.home.arpa/auth/callback
+          - https://argocd.0x42labs.net/auth/callback
           - http://localhost:8085/auth/callback
         scopes:
           - openid
