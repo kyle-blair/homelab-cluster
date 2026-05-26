@@ -363,6 +363,7 @@ sealed_secret_needs_update() {
 wait_for_sealed_secrets() {
   echo "[full-bootstrap] Waiting for Sealed Secrets controller"
   wait_for_argocd_application sealed-secrets "Sealed Secrets Argo CD application"
+  wait_for_cluster_resource crd/sealedsecrets.bitnami.com "Sealed Secrets custom resource definition"
 
   kubectl wait \
     --for condition=Established \
@@ -715,6 +716,22 @@ wait_for_resource() {
   echo "[full-bootstrap] Waiting for $description"
   for _ in $(seq 1 60); do
     if kubectl get "$resource" --namespace "$namespace" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 5
+  done
+
+  echo "Timed out waiting for $description." >&2
+  return 1
+}
+
+wait_for_cluster_resource() {
+  local resource=$1
+  local description=$2
+
+  echo "[full-bootstrap] Waiting for $description"
+  for _ in $(seq 1 60); do
+    if kubectl get "$resource" >/dev/null 2>&1; then
       return 0
     fi
     sleep 5
