@@ -1,21 +1,21 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: local-path-storage
+  name: node-local-storage
 
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: local-path-provisioner-service-account
-  namespace: local-path-storage
+  namespace: node-local-storage
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: local-path-provisioner-role
-  namespace: local-path-storage
+  namespace: node-local-storage
 rules:
   - apiGroups: [""]
     resources: ["pods"]
@@ -45,7 +45,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: local-path-provisioner-bind
-  namespace: local-path-storage
+  namespace: node-local-storage
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -53,7 +53,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: local-path-provisioner-service-account
-    namespace: local-path-storage
+    namespace: node-local-storage
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -67,14 +67,14 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: local-path-provisioner-service-account
-    namespace: local-path-storage
+    namespace: node-local-storage
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: local-path-provisioner
-  namespace: local-path-storage
+  namespace: node-local-storage
 spec:
   replicas: 1
   selector:
@@ -115,7 +115,7 @@ spec:
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: local-path
+  name: node-local
   annotations:
     storageclass.kubernetes.io/is-default-class: "true"
 provisioner: rancher.io/local-path
@@ -127,7 +127,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: local-path-config
-  namespace: local-path-storage
+  namespace: node-local-storage
 data:
   config.json: |-
     {

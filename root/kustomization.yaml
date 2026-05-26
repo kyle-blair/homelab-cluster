@@ -8,7 +8,7 @@ resources:
   - apps/ingress.yaml
   - apps/ldap.yaml
   - apps/load-balancer.yaml
-  - apps/local-path-storage.yaml
+  - apps/node-local-storage.yaml
   - apps/logging.yaml
   - apps/monitoring-config.yaml
   - apps/monitoring.yaml

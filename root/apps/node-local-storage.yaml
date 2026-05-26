@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: local-path-storage
+  name: node-local-storage
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "-3"
@@ -10,10 +10,10 @@ spec:
   source:
     repoURL: https://github.com/kyle-blair/homelab-cluster.git
     targetRevision: main
-    path: apps/local-path-storage
+    path: apps/node-local-storage
   destination:
     server: https://kubernetes.default.svc
-    namespace: local-path-storage
+    namespace: node-local-storage
   syncPolicy:
     automated:
       prune: true
