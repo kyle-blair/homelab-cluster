@@ -15,6 +15,7 @@ spec:
       labels:
         app: auth-gateway
     spec:
+      enableServiceLinks: false
       securityContext:
         fsGroup: 1000
       containers:
@@ -25,36 +26,26 @@ spec:
             - name: http
               containerPort: 9091
           env:
+            - name: X_AUTHELIA_CONFIG
+              value: /configuration.yml
             - name: X_AUTHELIA_CONFIG_FILTERS
               value: template
-            - name: AUTHELIA_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: auth-gateway-secrets
-                  key: JWT_SECRET
+            - name: AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE
+              value: /app/secrets/JWT_SECRET
             - name: AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE
-              value: /config/secrets/OIDC_HMAC_SECRET
-            - name: AUTHELIA_SESSION_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: auth-gateway-secrets
-                  key: SESSION_SECRET
-            - name: AUTHELIA_STORAGE_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: auth-gateway-secrets
-                  key: STORAGE_ENCRYPTION_KEY
-            - name: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: auth-gateway-secrets
-                  key: LDAP_PASSWORD
+              value: /app/secrets/OIDC_HMAC_SECRET
+            - name: AUTHELIA_SESSION_SECRET_FILE
+              value: /app/secrets/SESSION_SECRET
+            - name: AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE
+              value: /app/secrets/STORAGE_ENCRYPTION_KEY
+            - name: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE
+              value: /app/secrets/LDAP_PASSWORD
           volumeMounts:
             - name: config
-              mountPath: /config/configuration.yml
+              mountPath: /configuration.yml
               subPath: configuration.yaml
             - name: secrets
-              mountPath: /config/secrets
+              mountPath: /app/secrets
               readOnly: true
             - name: data
               mountPath: /var/lib/authelia
