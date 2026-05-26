@@ -793,7 +793,7 @@ seed_ldap_identity() {
 
   echo "[full-bootstrap] Seeding LDAP admin identity"
   kubectl delete job ldap-bootstrap-identity --namespace auth --ignore-not-found >/dev/null
-  kubectl apply -f - <<'YAML'
+  kubectl apply --filename - <<'YAML'
 apiVersion: batch/v1
 kind: Job
 metadata:
