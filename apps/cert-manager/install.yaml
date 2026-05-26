@@ -13028,7 +13028,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
           - --v=2
-          - --leader-election-namespace=kube-system
+          - --leader-election-namespace=$(POD_NAMESPACE)
           ports:
           - containerPort: 9402
             name: http-metrics
@@ -13092,7 +13092,7 @@ spec:
           args:
           - --v=2
           - --cluster-resource-namespace=$(POD_NAMESPACE)
-          - --leader-election-namespace=kube-system
+          - --leader-election-namespace=$(POD_NAMESPACE)
           - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.18.2
           - --max-concurrent-challenges=60
           ports:
