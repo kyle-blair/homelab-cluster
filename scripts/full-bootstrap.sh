@@ -24,6 +24,7 @@ CA_KEY=""
 LOAD_BALANCER_ADDRESSES=""
 GENERATED_KUBECONFIG=""
 ARTIFACTS_DIR="${REPO_ROOT}/infrastructure/artifacts"
+FORCE_RESEAL_SEALED_SECRET=""
 
 usage() {
   cat <<USAGE >&2
@@ -353,6 +354,14 @@ sealed_secret_valid() {
 sealed_secret_needs_update() {
   local path=$1
 
+  if [ -n "$FORCE_RESEAL_SEALED_SECRET" ]; then
+    case "$path" in
+      *"/${FORCE_RESEAL_SEALED_SECRET}.sealed.yaml")
+        return 0
+        ;;
+    esac
+  fi
+
   if sealed_secret_valid "$path"; then
     return 1
   fi
@@ -373,6 +382,36 @@ wait_for_sealed_secrets() {
   kubectl rollout status deployment/sealed-secrets-controller \
     --namespace kube-system \
     --timeout=300s
+}
+
+apply_sealed_secret_manifests() {
+  local manifest
+  local applied
+
+  if [ "$#" -eq 0 ]; then
+    return 0
+  fi
+
+  echo "[full-bootstrap] Applying SealedSecret manifests to the cluster"
+  for manifest in "$@"; do
+    if [ ! -f "$manifest" ]; then
+      continue
+    fi
+
+    applied=false
+    for _ in $(seq 1 60); do
+      if kubectl apply --filename "$manifest"; then
+        applied=true
+        break
+      fi
+      sleep 5
+    done
+
+    if [ "$applied" != true ]; then
+      echo "Failed to apply regenerated SealedSecret manifest: $manifest" >&2
+      return 1
+    fi
+  done
 }
 
 ensure_sealed_secret_manifests() {
@@ -513,12 +552,16 @@ ensure_sealed_secret_manifests() {
 
   if [ "$REPO_CONFIG_CHANGED" = true ]; then
     echo "[full-bootstrap] SealedSecret manifests were written to the repo." >&2
-    echo "[full-bootstrap] Commit and push these changes, then rerun bootstrap so Argo CD can sync them." >&2
+    apply_sealed_secret_manifests \
+      "$internal_ca_target" \
+      "$ldap_admin_target" \
+      "$auth_gateway_target" \
+      "$auth_admin_target"
+    echo "[full-bootstrap] Commit and push these changes so Argo CD's declared state matches the cluster." >&2
     git diff --stat -- \
       apps/cert-manager \
       apps/ldap \
       apps/auth-gateway
-    exit 75
   fi
 }
 
@@ -744,10 +787,16 @@ wait_for_cluster_resource() {
 print_sealed_secret_diagnostics() {
   local name=$1
   local namespace=$2
+  local synced_condition
 
   echo "[full-bootstrap] Diagnostics for sealedsecret/$name in namespace $namespace" >&2
   kubectl get "sealedsecret/${name}" --namespace "$namespace" --output wide >&2 || true
-  kubectl describe "sealedsecret/${name}" --namespace "$namespace" >&2 || true
+  synced_condition="$(kubectl get "sealedsecret/${name}" \
+    --namespace "$namespace" \
+    --output "jsonpath={range .status.conditions[?(@.type=='Synced')]}{.status}{': '}{.message}{end}" 2>/dev/null || true)"
+  if [ -n "$synced_condition" ]; then
+    echo "[full-bootstrap] SealedSecret synced condition: $synced_condition" >&2
+  fi
 }
 
 print_namespace_events() {
@@ -757,15 +806,72 @@ print_namespace_events() {
   kubectl get events --namespace "$namespace" --sort-by=.lastTimestamp >&2 || true
 }
 
+sync_failure_needs_reseal() {
+  local message=$1
+
+  case "$message" in
+    *"no key"*|*"No key"*|*"cannot decrypt"*|*"Cannot decrypt"*|*"failed to decrypt"*|*"Failed to decrypt"*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+repair_sealed_secret_decryption() {
+  local secret=$1
+  local namespace=$2
+  local message=$3
+  local previous_force_reseal
+
+  if ! sync_failure_needs_reseal "$message"; then
+    return 1
+  fi
+
+  echo "[full-bootstrap] Repairing sealedsecret/$secret in namespace $namespace by resealing it for the current controller key"
+  previous_force_reseal=$FORCE_RESEAL_SEALED_SECRET
+  FORCE_RESEAL_SEALED_SECRET=$secret
+  ensure_sealed_secret_manifests
+  FORCE_RESEAL_SEALED_SECRET=$previous_force_reseal
+}
+
 wait_for_secret_from_sealed_secret() {
   local secret=$1
   local namespace=$2
   local description=$3
+  local synced_condition
+  local repair_attempted=false
 
-  if wait_for_resource "secret/${secret}" "$namespace" "$description"; then
-    return 0
-  fi
+  echo "[full-bootstrap] Waiting for $description"
+  for _ in $(seq 1 60); do
+    if kubectl get "secret/${secret}" --namespace "$namespace" >/dev/null 2>&1; then
+      return 0
+    fi
 
+    synced_condition="$(kubectl get "sealedsecret/${secret}" \
+      --namespace "$namespace" \
+      --output "jsonpath={range .status.conditions[?(@.type=='Synced')]}{.status}{': '}{.message}{end}" 2>/dev/null || true)"
+    if [ "${synced_condition#False: }" != "$synced_condition" ]; then
+      if [ "$repair_attempted" = false ] && repair_sealed_secret_decryption "$secret" "$namespace" "${synced_condition#False: }"; then
+        repair_attempted=true
+        sleep 5
+        continue
+      fi
+
+      echo "SealedSecret $namespace/$secret failed to sync: ${synced_condition#False: }" >&2
+      print_sealed_secret_diagnostics "$secret" "$namespace"
+      print_namespace_events "$namespace"
+      echo "[full-bootstrap] Recent Sealed Secrets controller logs" >&2
+      kubectl logs deployment/sealed-secrets-controller \
+        --namespace kube-system \
+        --tail=80 >&2 || true
+      return 1
+    fi
+
+    sleep 5
+  done
+
+  echo "Timed out waiting for $description." >&2
   print_sealed_secret_diagnostics "$secret" "$namespace"
   print_namespace_events "$namespace"
   echo "[full-bootstrap] Recent Sealed Secrets controller logs" >&2
@@ -820,6 +926,7 @@ spec:
   backoffLimit: 4
   template:
     spec:
+      enableServiceLinks: false
       restartPolicy: OnFailure
       containers:
         - name: ldap-bootstrap-identity
