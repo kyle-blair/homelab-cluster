@@ -503,6 +503,16 @@ spec:
           name: webhook-cert
           readOnly: true
       dnsPolicy: ClusterFirst
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: network.0x42labs.net/primary-link
+                operator: NotIn
+                values:
+                - wifi
+            weight: 100
       nodeSelector:
         kubernetes.io/os: linux
       serviceAccountName: ingress-nginx

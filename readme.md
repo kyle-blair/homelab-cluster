@@ -110,6 +110,27 @@ After a successful run, admin credentials are written to
 CA certificate is copied to `infrastructure/artifacts/internal-ca.crt` for
 workstation trust setup.
 
+## Node Link Labels
+
+The example Kubespray inventory labels nodes as Wi-Fi by default:
+
+```yaml
+node_labels:
+  network.0x42labs.net/primary-link: wifi
+```
+
+For an already-running cluster, apply the same label directly:
+
+```shell
+kubectl label nodes --all network.0x42labs.net/primary-link=wifi --overwrite
+```
+
+Override wired nodes individually with the correct value, for example:
+
+```shell
+kubectl label node node0 network.0x42labs.net/primary-link=wired --overwrite
+```
+
 ## Internal CA Secret
 
 Cert-manager issues cluster certificates from an internal CA secret that must be

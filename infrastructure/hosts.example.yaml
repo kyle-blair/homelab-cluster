@@ -1,6 +1,8 @@
 all:
   vars:
     kube_proxy_strict_arp: true
+    node_labels:
+      network.0x42labs.net/primary-link: wifi
 
   hosts:
     node0:
