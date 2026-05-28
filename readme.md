@@ -125,7 +125,7 @@ hosts:
     ansible_host: 10.0.20.20
     ansible_user: operator
     node_labels:
-      network.0x42labs.net/primary-link: wifi
+        0x42labs.net/network-connection: wifi
 ```
 
 The current MetalLB manifests use L2 advertisements. At least one node must be
@@ -137,13 +137,13 @@ router or firewall as a BGP peer instead.
 For an already-running cluster, label Wi-Fi nodes directly:
 
 ```shell
-kubectl label node node0 network.0x42labs.net/primary-link=wifi --overwrite
+kubectl label node node0 0x42labs.net/network-connection=wifi --overwrite
 ```
 
 Remove the label from wired nodes:
 
 ```shell
-kubectl label node node2 network.0x42labs.net/primary-link-
+kubectl label node node2 0x42labs.net/network-connection-
 ```
 
 ## Internal CA Secret

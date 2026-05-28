@@ -505,14 +505,13 @@ spec:
       dnsPolicy: ClusterFirst
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - preference:
-              matchExpressions:
-              - key: network.0x42labs.net/primary-link
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: 0x42labs.net/network-connection
                 operator: NotIn
                 values:
                 - wifi
-            weight: 100
       nodeSelector:
         kubernetes.io/os: linux
       serviceAccountName: ingress-nginx

@@ -7,12 +7,12 @@ all:
       ansible_host: 10.0.120.20
       ansible_user: operator
       node_labels:
-        network.0x42labs.net/primary-link: wifi
+        0x42labs.net/network-connection: wifi
     node1:
       ansible_host: 10.0.120.21
       ansible_user: operator
       node_labels:
-        network.0x42labs.net/primary-link: wifi
+        0x42labs.net/network-connection: wifi
     node2:
       ansible_host: 10.0.10.150
       ansible_user: operator
