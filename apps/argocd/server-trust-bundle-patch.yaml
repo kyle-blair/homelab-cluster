@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-server
+spec:
+  template:
+    spec:
+      containers:
+        - name: argocd-server
+          env:
+            - name: SSL_CERT_FILE
+              value: /app/config/trust/ca-certificates.crt
+            - name: REQUESTS_CA_BUNDLE
+              value: /app/config/trust/ca-certificates.crt
+            - name: GIT_SSL_CAINFO
+              value: /app/config/trust/ca-certificates.crt
+          volumeMounts:
+            - name: internal-ca-bundle
+              mountPath: /app/config/trust
+              readOnly: true
+      volumes:
+        - name: internal-ca-bundle
+          configMap:
+            name: internal-ca-bundle
+            optional: true

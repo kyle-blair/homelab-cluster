@@ -82,6 +82,12 @@ Argo CD uses the auth gateway as its OIDC provider and maps the LDAP `admins`
 group to Argo CD admin access. The built-in Argo CD admin account is disabled in
 the declared configuration.
 
+The cluster installs trust-manager to distribute a combined trust bundle made
+from the default public certificate authorities and the internal Kubernetes CA.
+The bundle is written as `internal-ca-bundle` in every namespace. Argo CD mounts
+that bundle so OIDC discovery trusts the auth gateway certificate issued by the
+internal CA.
+
 The script can be overridden with environment variables:
 
 - `ARGOCD_VERSION`: upstream Argo CD install manifest tag, default `v3.1.8`.

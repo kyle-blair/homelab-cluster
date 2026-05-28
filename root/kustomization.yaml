@@ -6,6 +6,8 @@ resources:
   - apps/argocd.yaml
   - apps/auth-gateway.yaml
   - apps/cert-manager.yaml
+  - apps/trust-manager.yaml
+  - apps/trust.yaml
   - apps/ingress.yaml
   - apps/ldap.yaml
   - apps/load-balancer.yaml

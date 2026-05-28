@@ -5,3 +5,4 @@ resources:
 patches:
   - path: config-map.yaml
   - path: rbac-config-map.yaml
+  - path: server-trust-bundle-patch.yaml
