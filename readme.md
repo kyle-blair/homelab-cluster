@@ -112,23 +112,38 @@ workstation trust setup.
 
 ## Node Link Labels
 
-The example Kubespray inventory labels nodes as Wi-Fi by default:
+Nodes are treated as wired unless they explicitly declare that their primary
+link is Wi-Fi. This keeps the cluster behavior simple for the current MetalLB L2
+configuration while still acknowledging that Wi-Fi-only nodes are common in a
+home lab.
+
+Label Wi-Fi nodes in the Kubespray inventory:
 
 ```yaml
-node_labels:
-  network.0x42labs.net/primary-link: wifi
+hosts:
+  node0:
+    ansible_host: 10.0.20.20
+    ansible_user: operator
+    node_labels:
+      network.0x42labs.net/primary-link: wifi
 ```
 
-For an already-running cluster, apply the same label directly:
+The current MetalLB manifests use L2 advertisements. At least one node must be
+on a wired network and left without the Wi-Fi label, because Wi-Fi networks
+often do not forward the layer 2 behavior that MetalLB depends on. If every node
+will stay on Wi-Fi, replace the L2 advertisement with BGP and configure the
+router or firewall as a BGP peer instead.
+
+For an already-running cluster, label Wi-Fi nodes directly:
 
 ```shell
-kubectl label nodes --all network.0x42labs.net/primary-link=wifi --overwrite
+kubectl label node node0 network.0x42labs.net/primary-link=wifi --overwrite
 ```
 
-Override wired nodes individually with the correct value, for example:
+Remove the label from wired nodes:
 
 ```shell
-kubectl label node node0 network.0x42labs.net/primary-link=wired --overwrite
+kubectl label node node2 network.0x42labs.net/primary-link-
 ```
 
 ## Internal CA Secret
