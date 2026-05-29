@@ -78,6 +78,20 @@ identity_providers:
           - email
           - groups
         token_endpoint_auth_method: none
+      - client_id: grafana
+        client_name: Grafana
+        public: true
+        authorization_policy: one_factor
+        consent_mode: pre-configured
+        pre_configured_consent_duration: 90 days
+        redirect_uris:
+          - https://grafana.0x42labs.net/login/generic_oauth
+        scopes:
+          - openid
+          - profile
+          - email
+          - groups
+        token_endpoint_auth_method: none
 
 notifier:
   disable_startup_check: true
