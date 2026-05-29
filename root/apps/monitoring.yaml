@@ -18,6 +18,8 @@ spec:
           grafana.ini:
             server:
               root_url: https://grafana.0x42labs.net
+            security:
+              disable_initial_admin_creation: true
             auth.generic_oauth:
               enabled: true
               name: Auth Gateway
