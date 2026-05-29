@@ -62,11 +62,18 @@ identity_providers:
   oidc:
     jwks:
       - key: {{ secret "/app/secrets/OIDC_JWKS_KEY" | mindent 10 "|" | msquote }}
+    claims_policies:
+      argocd:
+        id_token:
+          - email
+          - groups
+          - preferred_username
     clients:
       - client_id: argocd
         client_name: Argo CD
         public: true
         authorization_policy: one_factor
+        claims_policy: argocd
         consent_mode: pre-configured
         pre_configured_consent_duration: 90 days
         redirect_uris:
