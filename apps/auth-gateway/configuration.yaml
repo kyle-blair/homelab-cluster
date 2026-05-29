@@ -68,7 +68,7 @@ identity_providers:
         public: true
         authorization_policy: one_factor
         consent_mode: pre-configured
-        pre_configured_consent_duration: 90d
+        pre_configured_consent_duration: 90 days
         redirect_uris:
           - https://argocd.0x42labs.net/auth/callback
           - http://localhost:8085/auth/callback

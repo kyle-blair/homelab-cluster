@@ -11,5 +11,3 @@ configMapGenerator:
   - name: auth-gateway-config
     files:
       - configuration.yaml
-generatorOptions:
-  disableNameSuffixHash: true
