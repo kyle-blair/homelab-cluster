@@ -18,6 +18,11 @@ spec:
           enabled: false
         promtail:
           enabled: true
+          config:
+            clients:
+              - url: http://logging-loki:3100/loki/api/v1/push
+          readinessProbe:
+            timeoutSeconds: 5
         loki:
           isDefault: true
           persistence:
