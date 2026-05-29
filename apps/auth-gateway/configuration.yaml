@@ -12,6 +12,7 @@ session:
   same_site: lax
   expiration: 1h
   inactivity: 15m
+  remember_me: 6 hours
   cookies:
     - domain: 0x42labs.net
       authelia_url: https://auth.0x42labs.net
