@@ -69,6 +69,12 @@ identity_providers:
           - email
           - groups
           - preferred_username
+      grafana:
+        id_token:
+          - email
+          - name
+          - groups
+          - preferred_username
     clients:
       - client_id: argocd
         client_name: Argo CD
@@ -90,6 +96,7 @@ identity_providers:
         client_name: Grafana
         public: true
         authorization_policy: one_factor
+        claims_policy: grafana
         consent_mode: pre-configured
         pre_configured_consent_duration: 90 days
         redirect_uris:
