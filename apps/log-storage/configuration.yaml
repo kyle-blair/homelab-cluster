@@ -22,8 +22,7 @@ schema_config:
 
 storage_config:
   filesystem:
-    chunks_directory: /var/loki/chunks
-    rules_directory: /var/loki/rules
+    directory: /var/loki/chunks
 
 compactor:
   working_directory: /var/loki/compactor

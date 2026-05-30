@@ -1,4 +1,4 @@
-data_dir = "/var/lib/vector"
+data_dir = "/var/lib"
 
 [sources.syslog_tcp]
 type = "syslog"
