@@ -12,6 +12,7 @@ resources:
   - apps/ldap.yaml
   - apps/load-balancer.yaml
   - apps/node-local-storage.yaml
-  - apps/logging.yaml
+  - apps/log-storage.yaml
+  - apps/log-collector.yaml
   - apps/monitoring-config.yaml
   - apps/monitoring.yaml

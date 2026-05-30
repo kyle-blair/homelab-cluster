@@ -11,6 +11,6 @@ data:
     - name: Loki
       type: loki
       access: proxy
-      url: http://logging-loki.logging.svc.cluster.local:3100
+      url: http://log-storage.logs.svc.cluster.local:3100
       isDefault: false
       editable: false

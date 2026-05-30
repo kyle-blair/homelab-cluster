@@ -1,0 +1,20 @@
+[sources.kubernetes_logs]
+type = "kubernetes_logs"
+
+[transforms.kubernetes_metadata]
+type = "remap"
+inputs = ["kubernetes_logs"]
+source = '''
+.app = get(.kubernetes.pod_labels, ["app.kubernetes.io/name"]) ?? get(.kubernetes.pod_labels, ["app"]) ?? "unknown"
+'''
+
+[sinks.log_storage]
+type = "loki"
+inputs = ["kubernetes_metadata"]
+endpoint = "http://log-storage.logs.svc.cluster.local:3100"
+encoding.codec = "json"
+labels.job = "kubernetes"
+labels.namespace = "{{ kubernetes.pod_namespace }}"
+labels.app = "{{ app }}"
+labels.container = "{{ kubernetes.container_name }}"
+labels.node = "{{ kubernetes.pod_node_name }}"

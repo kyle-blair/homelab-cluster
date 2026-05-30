@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-log-collector
+  labels:
+    app.kubernetes.io/name: log-collector
+    app.kubernetes.io/component: node
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: log-collector
+      app.kubernetes.io/component: node
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: log-collector
+        app.kubernetes.io/component: node
+    spec:
+      serviceAccountName: log-collector
+      containers:
+        - name: log-collector
+          image: docker.io/timberio/vector:0.55.0-debian
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config
+            - /etc/vector/node-configuration.toml
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vector
+              readOnly: true
+            - name: var-log
+              mountPath: /var/log
+              readOnly: true
+            - name: var-lib
+              mountPath: /var/lib
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/vector
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: config
+          configMap:
+            name: node-log-collector-config
+        - name: var-log
+          hostPath:
+            path: /var/log
+            type: Directory
+        - name: var-lib
+          hostPath:
+            path: /var/lib
+            type: Directory
+        - name: data
+          emptyDir: {}

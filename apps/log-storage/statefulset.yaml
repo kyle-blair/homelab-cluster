@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: log-storage
+  labels:
+    app.kubernetes.io/name: log-storage
+spec:
+  serviceName: log-storage
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: log-storage
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: log-storage
+    spec:
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: log-storage
+          image: docker.io/grafana/loki:3.7.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config.file=/etc/loki/configuration.yaml
+          ports:
+            - name: http
+              containerPort: 3100
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+              readOnly: true
+            - name: data
+              mountPath: /var/loki
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config
+          configMap:
+            name: log-storage-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: node-local
+        resources:
+          requests:
+            storage: 20Gi

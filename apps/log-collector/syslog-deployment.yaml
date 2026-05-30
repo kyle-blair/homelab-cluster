@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syslog-collector
+  labels:
+    app.kubernetes.io/name: log-collector
+    app.kubernetes.io/component: syslog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: log-collector
+      app.kubernetes.io/component: syslog
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: log-collector
+        app.kubernetes.io/component: syslog
+    spec:
+      containers:
+        - name: log-collector
+          image: docker.io/timberio/vector:0.55.0-debian
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config
+            - /etc/vector/syslog-configuration.toml
+          ports:
+            - name: syslog-tcp
+              containerPort: 1514
+              protocol: TCP
+            - name: syslog-udp
+              containerPort: 1514
+              protocol: UDP
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vector
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/vector
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: config
+          configMap:
+            name: syslog-collector-config
+        - name: data
+          emptyDir: {}
