@@ -37,11 +37,8 @@ spec:
             - name: var-log
               mountPath: /var/log
               readOnly: true
-            - name: var-lib
-              mountPath: /var/lib
-              readOnly: true
             - name: data
-              mountPath: /var/lib/vector
+              mountPath: /var/lib
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -55,10 +52,6 @@ spec:
         - name: var-log
           hostPath:
             path: /var/log
-            type: Directory
-        - name: var-lib
-          hostPath:
-            path: /var/lib
             type: Directory
         - name: data
           emptyDir: {}

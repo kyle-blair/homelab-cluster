@@ -42,7 +42,7 @@ spec:
               mountPath: /etc/vector
               readOnly: true
             - name: data
-              mountPath: /var/lib/vector
+              mountPath: /var/lib
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
