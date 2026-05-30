@@ -14,9 +14,9 @@ address = "0.0.0.0:1514"
 type = "remap"
 inputs = ["syslog_tcp", "syslog_udp"]
 source = '''
-.device = to_string(.hostname ?? .host ?? "unknown") ?? "unknown"
-.facility_label = to_string(.facility ?? "unknown") ?? "unknown"
-.severity_label = to_string(.severity ?? "unknown") ?? "unknown"
+.device = to_string(.hostname) ?? to_string(.host) ?? "unknown"
+.facility_label = to_string(.facility) ?? "unknown"
+.severity_label = to_string(.severity) ?? "unknown"
 '''
 
 [sinks.log_storage]
