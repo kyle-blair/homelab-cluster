@@ -24,6 +24,11 @@ spec:
           args:
             - --config
             - /etc/vector/node-configuration.toml
+          env:
+            - name: VECTOR_SELF_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           resources:
             requests:
               cpu: 50m
