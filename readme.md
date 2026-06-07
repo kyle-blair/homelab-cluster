@@ -4,203 +4,67 @@ A declarative, version-controlled kubernetes cluster managed using continuous de
 
 ## prerequisites
 
-- Podman, if building the cluster with Kubespray from this repo.
-- kubectl configured for the cluster before bootstrapping apps. When Kubespray is
-  run by `scripts/full-bootstrap.sh`, the script uses local `ssh` and `scp` to fetch
-  `/etc/kubernetes/admin.conf` from the first control-plane host to
-  `infrastructure/artifacts/admin.conf` and uses it for the remaining bootstrap
-  steps.
+I plan to pare down these requirements and/or provide automated, sensible defaults.
 
-## Full Bootstrap
+| dependency | purpose | value |
+| --- | --- | --- |
+| Podman | Runs Kubespray in a container while bootstrapping the kubernetes cluster. | Hides most of Kubespray's local setup complexity and keeps the bootstrap environment reproducible. |
+| At least one computer with a wired network connection, passwordless `ssh` access, and passwordless `sudo` access | The kubernetes cluster deploys to and runs on the provided host(s). | The load balancer doesn't work over wifi and I haven't found a reasonable alternative to requiring ethernet on at least one node. Passwordless ssh and sudo are used to automate host prepraration, cluster creation, etcetera. |
+| Certificate authority certificate and private key files | Becomes the certificate authority used by the cluster. | Lets experienced users anchor cluster certificates to an existing certificate authority while keeping certificate issuance declarative.Needs to be automated for  |
+| At least two unused ip addresses on the same subnet as the wired host. | Will be used as the ingress ip address. | Lets experienced users anchor cluster certificates to an existing certificate authority while keeping certificate issuance declarative.Needs to be automated for  |
 
-The preferred entrypoint is the full bootstrap helper. It can run Kubespray from
-a pinned container image, install Argo CD and Sealed Secrets, seal required
-secret inputs into repo manifests, register the source repository, create the
-root `Application`, and validate the bootstrap state.
+## quick start
 
-```shell
-cp infrastructure/hosts.example.yaml infrastructure/hosts.yaml
-$EDITOR infrastructure/hosts.yaml
+1. Define your hosts in a hosts file.
+    If the host is only reachable over a wifi network, be sure to apply the wifi
+    label as seen in the [example hosts file](./infrastructure/hosts.example.yaml).
 
-./scripts/full-bootstrap.sh \
-  --provision-cluster \
-  --hosts infrastructure/hosts.yaml \
-  --domain home.arpa \
-  --load-balancer-addresses 192.0.2.30-192.0.2.40 \
-  --ca-crt path/to/intermediate-ca.crt \
-  --ca-key path/to/intermediate-ca.key \
-  --admin-username your-username \
-  --admin-email you@home.arpa \
-  --ssh-private-key ~/.ssh/id_rsa \
-  --ssh-known-hosts ~/.ssh/known_hosts
-```
+    ```shell
+    cp infrastructure/hosts.example.yaml infrastructure/hosts.yaml
+    $EDITOR infrastructure/hosts.yaml
+    ```
 
-If the kubernetes cluster already exists, omit `--provision-cluster`:
+2. Run the bootstrap script.
 
-```shell
-./scripts/full-bootstrap.sh \
-  --ca-crt path/to/intermediate-ca.crt \
-  --ca-key path/to/intermediate-ca.key
-```
+    ```shell
+    /scripts/full-bootstrap.sh \
+    --provision-cluster \
+    --hosts infrastructure/hosts.yaml \
+    --load-balancer-addresses 192.0.2.30-192.0.2.40 \
+    --ca-crt path/to/intermediate-ca.crt \
+    --ca-key path/to/intermediate-ca.key \
+    --ssh-private-key ~/.ssh/operator \
+    --ssh-known-hosts ~/.ssh/known_hosts
+    ```
 
-The script is safe to run multiple times. It preserves existing live secret
-values when generating sealed manifests and registers the root source repository
-before creating the root `Application`.
+    Certain bootstrap behavior can be overridden with environment variables
+    and script arguments.
+    See the [bootstrap script](./scripts/full-bootstrap.sh) for the variables
+    and their defaults.
+    Use `./scripts/full-bootstrap.sh --help` for explanation of the script
+    arguments.
+    Be aware that the script may stop zero or more times and instruct you to
+    commit and push file changes.
+    After pushing, rerun the script with the same arguments to continue.
 
-Inputs that affect declared cluster state update the repo manifests. If
-`--domain`, `--load-balancer-addresses`, or required sealed secrets change
-files, the script stops so you can commit and push the new desired state, then
-rerun bootstrap. On a fresh cluster this means the first run installs Argo CD
-and Sealed Secrets, writes encrypted `SealedSecret` manifests to `apps/`, and
-exits before dependent apps need those secrets.
+3. Once complete, you can optionally add the certificate from the
+    `/infrastructure/artifacts/` directory to your client devices' trust stores.
+    Cluster websites present certificates generated automatically by the
+    cluster, so adding it means you will get encrypted transport and avoid
+    security complaints from web browser applications.
 
-SealedSecret manifests are tied to the Sealed Secrets controller key. During
-bootstrap, existing manifests are validated against the current controller and
-regenerated when they cannot be decrypted. Commit and push regenerated
-manifests, then rerun bootstrap.
+4. Open the `./infrastructure/artifacts/bootstrap-credentials.txt` file for
+    detials about the cluster, services, and default admin user.
+    Configure DNS as instructed in the file.
+    I plan to have the cluster provide a DNS service in the future.
 
-## Ownership
+5. Navigate to https://argocd.home.arpa (or replace home.arpa with your custom
+    domain, if you used one).
+    You should be redirected to the https://auth.home.arpa login page.
 
-Argo CD owns the manifests under `root/` and `apps/`. The bootstrap scripts only
-create prerequisites needed before those apps can become healthy:
+5. Login using the admin credentials from
+    `infrastructure/artifacts/bootstrap-credentials.txt`.
 
-- `apps/cert-manager/internal-ca.sealed.yaml`: sealed intermediate CA secret.
-- `apps/ldap/ldap-admin.sealed.yaml`: sealed LDAP admin secret.
-- `apps/auth-gateway/auth-gateway-secrets.sealed.yaml`: sealed auth gateway
-  secret material.
-- `apps/auth-gateway/auth-admin-user.sealed.yaml`: sealed LDAP admin user
-  credentials for central SSO.
-- `auth/ldap-bootstrap-identity`: temporary idempotent Job that seeds LDAP.
-- `argocd/source-repository`: declared in `apps/argocd-config` and applied by
-  bootstrap early so Argo CD shows the root repository immediately.
+6. You now have a declaritive cluster with "batteries included". You can add your
+    own workloads and customize the cluster as needed.
 
-Existing runtime secret values are preserved on reruns. Inputs that affect
-declared manifests are written to files in this repo instead of patched directly
-in the cluster.
-
-Argo CD uses the auth gateway as its OIDC provider and maps the LDAP `admins`
-group to Argo CD admin access. The built-in Argo CD admin account is disabled in
-the declared configuration.
-
-The cluster installs trust-manager to distribute a combined trust bundle made
-from the default public certificate authorities and the internal Kubernetes CA.
-The bundle is written as `internal-ca-bundle` in every namespace. Argo CD mounts
-that bundle so OIDC discovery trusts the auth gateway certificate issued by the
-internal CA.
-
-The script can be overridden with environment variables:
-
-- `ARGOCD_VERSION`: upstream Argo CD install manifest tag, default `v3.1.8`.
-- `KUBESPRAY_IMAGE`: Kubespray container image, default
-  `quay.io/kubespray/kubespray:v2.31.0`.
-- `KUBESPRAY_PLAYBOOK`: Kubespray playbook, default `cluster.yml`.
-- `KUBECONFIG_SSH_TARGET`: SSH target used to fetch
-  `/etc/kubernetes/admin.conf`, default first `kube_control_plane` inventory
-  host.
-- `ARGOCD_CLI_LOGIN`: log the local `argocd` CLI in through SSO after bootstrap
-  when the CLI is installed, default `false`.
-- `ARGOCD_CLI_SERVER`: Argo CD ingress hostname used for `argocd login`,
-  default `argocd.home.arpa`.
-- `ARGOCD_CLI_SSO`: use browser SSO for `argocd login`, default `true`.
-- `ARGOCD_CLI_INSECURE`: disable TLS certificate verification for `argocd
-  login`, default `false`.
-- `BOOTSTRAP_GENERATED_SECRET_BYTES`: random byte length for generated
-  bootstrap secrets, default `48`.
-- `AUTH_ADMIN_USERNAME`: LDAP admin username, default `admin`.
-- `AUTH_ADMIN_EMAIL`: LDAP admin email address, default `admin@home.arpa`.
-- `CLUSTER_DOMAIN`: base DNS domain used for service manifests and printed URLs,
-  default `home.arpa`.
-
-After a successful run, admin credentials are written to
-`infrastructure/artifacts/bootstrap-credentials.txt`. The provided intermediate
-CA certificate is copied to `infrastructure/artifacts/internal-ca.crt` for
-workstation trust setup.
-
-## Node Link Labels
-
-Nodes are treated as wired unless they explicitly declare that their primary
-link is Wi-Fi. This keeps the cluster behavior simple for the current MetalLB L2
-configuration while still acknowledging that Wi-Fi-only nodes are common in a
-home lab.
-
-Label Wi-Fi nodes in the Kubespray inventory:
-
-```yaml
-hosts:
-  node0:
-    ansible_host: 10.0.20.20
-    ansible_user: operator
-    node_labels:
-        0x42labs.net/network-connection: wifi
-```
-
-The current MetalLB manifests use L2 advertisements. At least one node must be
-on a wired network and left without the Wi-Fi label, because Wi-Fi networks
-often do not forward the layer 2 behavior that MetalLB depends on. If every node
-will stay on Wi-Fi, replace the L2 advertisement with BGP and configure the
-router or firewall as a BGP peer instead.
-
-For an already-running cluster, label Wi-Fi nodes directly:
-
-```shell
-kubectl label node node0 0x42labs.net/network-connection=wifi --overwrite
-```
-
-Remove the label from wired nodes:
-
-```shell
-kubectl label node node2 0x42labs.net/network-connection-
-```
-
-## Internal CA Secret
-
-Cert-manager issues cluster certificates from an internal CA secret that must be
-present in the `cert-manager` namespace. The repo does not generate or require
-your root authority key. Provide an intermediate CA certificate and private key
-signed by your root authority:
-
-```shell
-./scripts/full-bootstrap.sh --ca-crt path/to/ca.crt --ca-key path/to/ca.key
-```
-
-The bootstrap seals that intermediate CA into
-`apps/cert-manager/internal-ca.sealed.yaml` and adds it to the cert-manager
-kustomization. Commit and push the generated sealed manifest before rerunning
-bootstrap so Argo CD can create the live `internal-ca` Secret.
-
-For a rebuilt cluster with a new Sealed Secrets controller key, rerun bootstrap
-with the intermediate CA inputs. Bootstrap validates the existing sealed CA
-against the current controller and regenerates it when needed:
-
-```shell
-./scripts/full-bootstrap.sh \
-  --ca-crt path/to/ca.crt \
-  --ca-key path/to/ca.key
-```
-
-To rerun only the CA sealing step after Sealed Secrets exists in the cluster:
-
-```shell
-./scripts/provision-internal-ca.sh path/to/ca.crt path/to/ca.key
-```
-
-## Argo CD Only Bootstrap
-
-For a cluster where required sealed secrets are already committed, run the lower-level
-Argo CD bootstrap helper to install Argo CD, create the root `Application`, and
-hand control over to Argo CD:
-
-```shell
-./scripts/bootstrap-cluster.sh
-```
-
-## Sync Order
-
-Argo CD applications are assigned sync waves to ensure platform dependencies
-(such as cert-manager) finish installing before dependent configuration applies.
-
-## Validation
-
-`scripts/full-bootstrap.sh` validates that the root `Application` exists, the
-root source repository is registered, and, when the `argocd` CLI is available,
-that Argo CD can read both through the configured ingress.
