@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Rook v1.20.1 upstream Kubernetes manifests:
+  # https://github.com/rook/rook/tree/v1.20.1/deploy/examples
+  - rook-custom-resource-definitions.yaml
+  # Ceph Container Storage Interface operator v1.0.3 custom resource definitions required by Rook operator.yaml:
+  # https://github.com/ceph/ceph-csi-operator/tree/v1.0.3/deploy/multifile
+  - container-storage-interface-operator-custom-resource-definitions.yaml
+  - container-storage-interface-operator.yaml
+  # Upstream access control is namespaced for standalone installs; this copy is
+  # scoped to rook-ceph because Rook creates its Driver resources there.
+  - container-storage-interface-driver-access-control.yaml
+  - common.yaml
+  - operator.yaml
