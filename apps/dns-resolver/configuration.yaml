@@ -1,5 +1,19 @@
 recursor:
   threads: 2
+  forward_zones_recurse:
+    - zone: .
+      forwarders:
+        - 9.9.9.9:853
+        - 149.112.112.112:853
+
+outgoing:
+  tls_configurations:
+    - name: quad9
+      subnets:
+        - 9.9.9.9
+        - 149.112.112.112
+      subject_name: dns.quad9.net
+      validate_certificate: true
 
 incoming:
   listen:

@@ -23,7 +23,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: dns-resolver
-          image: docker.io/powerdns/pdns-recursor-52:5.2.11
+          image: docker.io/powerdns/pdns-recursor-54:5.4.3
           imagePullPolicy: IfNotPresent
           ports:
             - name: dns-tcp
