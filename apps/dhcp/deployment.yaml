@@ -46,13 +46,6 @@ spec:
               mountPath: /var/lib/kea
             - name: run
               mountPath: /run/kea
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-              add:
-                - NET_BIND_SERVICE
       volumes:
         - name: config
           configMap:
