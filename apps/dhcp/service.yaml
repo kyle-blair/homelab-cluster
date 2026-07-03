@@ -3,8 +3,7 @@ kind: Service
 metadata:
   name: dhcp
   annotations:
-    metallb.io/address-pool: dhcp-relay-address
-    metallb.io/loadBalancerIPs: 10.0.10.71
+    metallb.io/loadBalancerIPs: 10.0.10.62
   labels:
     app.kubernetes.io/name: dhcp
     app.kubernetes.io/part-of: network

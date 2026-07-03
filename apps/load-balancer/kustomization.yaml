@@ -4,5 +4,4 @@ resources:
   - install.yaml
   - default-ip-pool.yaml
   - default-advertisement.yaml
-  - dhcp-relay-address-pool.yaml
 namespace: metallb-system

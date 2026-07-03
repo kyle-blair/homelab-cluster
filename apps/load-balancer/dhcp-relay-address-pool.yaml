@@ -1,9 +1,0 @@
-apiVersion: metallb.io/v1beta1
-kind: IPAddressPool
-metadata:
-  name: dhcp-relay-address
-  namespace: metallb-system
-spec:
-  addresses:
-    - 10.0.10.71/32
-  autoAssign: false

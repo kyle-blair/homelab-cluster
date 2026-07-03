@@ -338,6 +338,8 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    metallb.io/loadBalancerIPs: 10.0.10.60
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: ingress-nginx
