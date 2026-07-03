@@ -1,0 +1,9 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: reserved-service-addresses
+  namespace: metallb-system
+spec:
+  addresses:
+  - 10.0.10.60-10.0.10.62
+  autoAssign: false
