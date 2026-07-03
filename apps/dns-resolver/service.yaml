@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-resolver
+  labels:
+    app.kubernetes.io/name: dns-resolver
+    app.kubernetes.io/part-of: dns
+    app.kubernetes.io/component: resolver
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: dns-resolver
+    app.kubernetes.io/part-of: dns
+    app.kubernetes.io/component: resolver
+  ports:
+    - name: dns-tcp
+      port: 53
+      targetPort: dns-tcp
+      protocol: TCP
+    - name: dns-udp
+      port: 53
+      targetPort: dns-udp
+      protocol: UDP

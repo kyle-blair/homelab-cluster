@@ -1,0 +1,47 @@
+upstreams:
+  init:
+    strategy: failOnError
+  groups:
+    default:
+      - tcp+udp:dns-resolver.dns.svc.cluster.local:53
+  strategy: strict
+  timeout: 2s
+
+blocking:
+  denylists:
+    default:
+      - https://big.oisd.nl
+      - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt
+  clientGroupsBlock:
+    default:
+      - default
+  blockType: nxDomain
+  loading:
+    refreshPeriod: 24h
+    downloads:
+      timeout: 60s
+      attempts: 5
+      cooldown: 10s
+    strategy: failOnError
+
+caching:
+  minTime: 5m
+  maxTime: 1h
+  prefetching: true
+
+prometheus:
+  enable: true
+  path: /metrics
+
+ports:
+  dns:
+    - 1053
+  http: 4000
+
+log:
+  level: info
+  format: json
+  timestamp: true
+
+queryLog:
+  type: none

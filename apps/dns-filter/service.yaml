@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-filter
+  labels:
+    app.kubernetes.io/name: dns-filter
+    app.kubernetes.io/part-of: dns
+    app.kubernetes.io/component: filter
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: dns-filter
+    app.kubernetes.io/part-of: dns
+    app.kubernetes.io/component: filter
+  ports:
+    - name: dns-tcp
+      port: 53
+      targetPort: dns-tcp
+      protocol: TCP
+    - name: dns-udp
+      port: 53
+      targetPort: dns-udp
+      protocol: UDP
+    - name: http
+      port: 4000
+      targetPort: http
+      protocol: TCP

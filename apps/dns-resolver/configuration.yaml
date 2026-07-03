@@ -1,0 +1,16 @@
+recursor:
+  threads: 2
+
+incoming:
+  listen:
+    - 0.0.0.0
+  port: 1053
+  allow_from:
+    - 0.0.0.0/0
+
+dnssec:
+  validation: validate
+
+logging:
+  quiet: true
+  structured_logging_backend: json

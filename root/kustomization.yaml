@@ -13,6 +13,9 @@ resources:
   - apps/ldap.yaml
   - apps/load-balancer.yaml
   - apps/node-local-storage.yaml
+  - apps/dns-resolver.yaml
+  - apps/dns-filter.yaml
+  - apps/dns-ingress.yaml
   - apps/log-storage.yaml
   - apps/log-collector.yaml
   - apps/monitoring-config.yaml
