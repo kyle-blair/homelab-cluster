@@ -1,14 +1,14 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: alertmanager-cert
+  name: alerts-cert
 spec:
-  commonName: alertmanager.0x42labs.net
+  commonName: alerts.0x42labs.net
   dnsNames:
-  - alertmanager.0x42labs.net
+  - alerts.0x42labs.net
   duration: 8760h
   issuerRef:
     kind: ClusterIssuer
     name: internal-ca-issuer
   renewBefore: 720h
-  secretName: alertmanager-tls
+  secretName: alerts-tls

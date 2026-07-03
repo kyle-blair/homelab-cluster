@@ -1,14 +1,14 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: prometheus-cert
+  name: metrics-cert
 spec:
-  commonName: prometheus.0x42labs.net
+  commonName: metrics.0x42labs.net
   dnsNames:
-  - prometheus.0x42labs.net
+  - metrics.0x42labs.net
   duration: 8760h
   issuerRef:
     kind: ClusterIssuer
     name: internal-ca-issuer
   renewBefore: 720h
-  secretName: prometheus-tls
+  secretName: metrics-tls

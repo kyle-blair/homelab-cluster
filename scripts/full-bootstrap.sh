@@ -1115,16 +1115,16 @@ Cluster access
 
 Auth gateway URL: https://auth.${CLUSTER_DOMAIN}
 Argo CD URL:      https://argocd.${CLUSTER_DOMAIN}
-Grafana URL:      https://grafana.${CLUSTER_DOMAIN}
-Prometheus URL:   https://prometheus.${CLUSTER_DOMAIN}
-Alertmanager URL: https://alertmanager.${CLUSTER_DOMAIN}
+Observability URL: https://observability.${CLUSTER_DOMAIN}
+Metrics URL:       https://metrics.${CLUSTER_DOMAIN}
+Alerts URL:        https://alerts.${CLUSTER_DOMAIN}
 
 Admin user:       ${username}
 Admin password:   ${password}
 
 Root CA:          ${ARTIFACTS_DIR}/internal-ca.crt
 Ingress address:  ${ingress_ip:-not assigned yet}
-DNS records:      Point auth, argocd, grafana, prometheus, and alertmanager at the ingress address.
+DNS records:      Point auth, argocd, observability, metrics, and alerts at the ingress address.
 SUMMARY
 
   chmod 0600 "${ARTIFACTS_DIR}/bootstrap-credentials.txt"

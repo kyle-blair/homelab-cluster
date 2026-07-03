@@ -7,7 +7,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: grafana.0x42labs.net
+  - host: observability.0x42labs.net
     http:
       paths:
       - path: /
@@ -19,5 +19,5 @@ spec:
               number: 80
   tls:
   - hosts:
-    - grafana.0x42labs.net
-    secretName: grafana-tls
+    - observability.0x42labs.net
+    secretName: observability-tls
