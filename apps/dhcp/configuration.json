@@ -1,0 +1,55 @@
+{
+  "Dhcp4": {
+    "interfaces-config": {
+      "interfaces": [
+        "*"
+      ],
+      "dhcp-socket-type": "udp"
+    },
+    "lease-database": {
+      "type": "memfile",
+      "persist": true,
+      "name": "/var/lib/kea/kea-leases4.csv",
+      "lfc-interval": 3600
+    },
+    "valid-lifetime": 86400,
+    "renew-timer": 21600,
+    "rebind-timer": 43200,
+    "subnet4": [
+      {
+        "id": 1,
+        "subnet": "10.0.10.0/24",
+        "pools": [
+          {
+            "pool": "10.0.10.100-10.0.10.199"
+          }
+        ],
+        "option-data": [
+          {
+            "name": "routers",
+            "data": "10.0.10.1"
+          },
+          {
+            "name": "domain-name-servers",
+            "data": "10.0.10.1"
+          },
+          {
+            "name": "domain-name",
+            "data": "0x42labs.net"
+          }
+        ]
+      }
+    ],
+    "loggers": [
+      {
+        "name": "kea-dhcp4",
+        "severity": "INFO",
+        "output_options": [
+          {
+            "output": "stdout"
+          }
+        ]
+      }
+    ]
+  }
+}

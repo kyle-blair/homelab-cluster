@@ -16,7 +16,7 @@
 	Maybe it's in the form of operators running inside the cluster.
 - [ ] Add architectural decision records.
 - [ ] Add a dns service.
-- [ ] Add a dhcp service.
+- [x] Add a dhcp service.
 - [ ] Plan out storage.
 - [ ] Rename the Kubernetes cluster ssh user to something like
     `cluster-operator` so it is distinct from other operator accounts such as

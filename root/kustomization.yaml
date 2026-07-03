@@ -16,6 +16,7 @@ resources:
   - apps/dns-resolver.yaml
   - apps/dns-filter.yaml
   - apps/dns-ingress.yaml
+  - apps/dhcp.yaml
   - apps/log-storage.yaml
   - apps/log-collector.yaml
   - apps/monitoring-config.yaml
