@@ -93,6 +93,7 @@ identity_providers:
           - profile
           - email
           - groups
+          - offline_access
         token_endpoint_auth_method: none
       - client_id: grafana
         client_name: Grafana
