@@ -323,7 +323,7 @@ apiVersion: v1
 data:
   global-auth-response-headers: Remote-User,Remote-Groups,Remote-Name,Remote-Email
   global-auth-signin: https://auth.0x42labs.net/#/?rd=$scheme://$best_http_host$request_uri
-  global-auth-url: https://auth.0x42labs.net/api/verify?rd=$scheme://$best_http_host$request_uri
+  global-auth-url: https://auth.0x42labs.net/api/authz/auth-request
 kind: ConfigMap
 metadata:
   labels:
