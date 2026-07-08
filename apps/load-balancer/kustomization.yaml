@@ -4,4 +4,5 @@ resources:
   - install.yaml
   - default-ip-pool.yaml
   - default-advertisement.yaml
+  - reserved-service-addresses.yaml
 namespace: metallb-system

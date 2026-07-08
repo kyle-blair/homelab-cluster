@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: dhcp
   annotations:
-    metallb.io/loadBalancerIPs: 10.0.10.62
+    metallb.io/loadBalancerIPs: 10.0.10.67
   labels:
     app.kubernetes.io/name: dhcp
     app.kubernetes.io/part-of: network
