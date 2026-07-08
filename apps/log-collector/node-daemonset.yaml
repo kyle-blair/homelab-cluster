@@ -42,9 +42,6 @@ spec:
             - name: var-log
               mountPath: /var/log
               readOnly: true
-            - name: run-log-journal
-              mountPath: /run/log/journal
-              readOnly: true
             - name: data
               mountPath: /var/lib
           securityContext:
@@ -60,10 +57,6 @@ spec:
         - name: var-log
           hostPath:
             path: /var/log
-            type: Directory
-        - name: run-log-journal
-          hostPath:
-            path: /run/log/journal
             type: Directory
         - name: data
           emptyDir: {}
