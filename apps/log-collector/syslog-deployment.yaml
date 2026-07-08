@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: log-collector
-          image: docker.io/timberio/vector:0.55.0-debian
+          image: docker.io/timberio/vector:0.56.0-debian
           imagePullPolicy: IfNotPresent
           args:
             - --config
