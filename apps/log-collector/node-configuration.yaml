@@ -5,7 +5,6 @@ sources:
     type: kubernetes_logs
   host_journal:
     type: journald
-    current_boot_only: false
 
 transforms:
   kubernetes_metadata:
