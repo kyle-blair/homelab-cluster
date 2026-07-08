@@ -23,7 +23,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --config
-            - /etc/vector/node-configuration.toml
+            - /etc/vector/node-configuration.yaml
           env:
             - name: VECTOR_SELF_NODE_NAME
               valueFrom:

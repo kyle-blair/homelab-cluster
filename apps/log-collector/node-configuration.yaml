@@ -1,0 +1,53 @@
+data_dir: /var/lib
+
+sources:
+  kubernetes_logs:
+    type: kubernetes_logs
+  host_journal:
+    type: journald
+    current_boot_only: false
+
+transforms:
+  kubernetes_metadata:
+    type: remap
+    inputs:
+      - kubernetes_logs
+    source: |
+      .app = get(.kubernetes.pod_labels, ["app.kubernetes.io/name"]) ?? get(.kubernetes.pod_labels, ["app"]) ?? "unknown"
+  host_journal_metadata:
+    type: remap
+    inputs:
+      - host_journal
+    source: |
+      .node = get_env_var!("VECTOR_SELF_NODE_NAME")
+      .unit = to_string(._SYSTEMD_UNIT) ?? to_string(.SYSLOG_IDENTIFIER) ?? "unknown"
+      .priority = to_string(.PRIORITY) ?? "unknown"
+      .transport = to_string(._TRANSPORT) ?? "unknown"
+
+sinks:
+  kubernetes_log_storage:
+    type: loki
+    inputs:
+      - kubernetes_metadata
+    endpoint: http://log-storage.logs.svc.cluster.local:3100
+    encoding:
+      codec: json
+    labels:
+      job: kubernetes
+      namespace: "{{ kubernetes.pod_namespace }}"
+      app: "{{ app }}"
+      container: "{{ kubernetes.container_name }}"
+      node: "{{ kubernetes.pod_node_name }}"
+  host_journal_log_storage:
+    type: loki
+    inputs:
+      - host_journal_metadata
+    endpoint: http://log-storage.logs.svc.cluster.local:3100
+    encoding:
+      codec: json
+    labels:
+      job: node-system
+      node: "{{ node }}"
+      unit: "{{ unit }}"
+      priority: "{{ priority }}"
+      transport: "{{ transport }}"

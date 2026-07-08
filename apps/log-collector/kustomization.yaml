@@ -11,7 +11,7 @@ resources:
 configMapGenerator:
   - name: node-log-collector-config
     files:
-      - node-configuration.toml
+      - node-configuration.yaml
   - name: syslog-collector-config
     files:
-      - syslog-configuration.toml
+      - syslog-configuration.yaml

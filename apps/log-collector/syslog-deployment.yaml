@@ -23,7 +23,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --config
-            - /etc/vector/syslog-configuration.toml
+            - /etc/vector/syslog-configuration.yaml
           ports:
             - name: syslog-tcp
               containerPort: 1514
