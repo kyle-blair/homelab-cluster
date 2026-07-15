@@ -5,7 +5,6 @@ sources:
     type: kubernetes_logs
   host_journal:
     type: journald
-    journal_directory: /var/log/journal
 
 transforms:
   kubernetes_metadata:
