@@ -8,11 +8,13 @@ all:
       ansible_user: operator
       node_labels:
         0x42labs.net/network-connection: wifi
+        0x42lab.net/network-path: wireless
     node1:
       ansible_host: 10.0.120.21
       ansible_user: operator
       node_labels:
         0x42labs.net/network-connection: wifi
+        0x42lab.net/network-path: wireless
     node2:
       ansible_host: 10.0.10.150
       ansible_user: operator
